@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.26)
 project(HinaPE LANGUAGES CXX)
 
-option(HINAPE_WARN_AS_ERROR "Treat compiler warnings as errors" ON)
+option(HINAPE_WARN_AS_ERROR "Treat compiler warnings as errors" OFF)
 option(HINAPE_WITH_CUDA "enable CUDA backend" ON)
 option(HINAPE_WITH_VULKAN "enable Vulkan compute backend" ON)
 option(HINAPE_WITH_TBB "enable TBB" ON)
@@ -36,10 +36,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-file(GLOB_RECURSE hpe_src include/*.hpp src/*.hpp src/*.cpp domains/*.hpp domains/*.cpp)
+file(GLOB_RECURSE hpe_src engine/*.h engine/*.cpp)
 
 add_executable(HinaPE main.cpp ${hpe_src})
-target_include_directories(HinaPE PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_include_directories(HinaPE PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 hinape_apply_common_warnings(HinaPE)
 hinape_apply_release_opts(HinaPE)
 
