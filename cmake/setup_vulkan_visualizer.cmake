@@ -1,6 +1,4 @@
 include_guard(GLOBAL)
-
-# Auto-detect or fetch vulkan-visualizer
 set(_HPE_VV_TAG "master")
 
 if (NOT TARGET VulkanVisualizer::vulkan_visualizer)
@@ -16,8 +14,6 @@ if (NOT TARGET VulkanVisualizer::vulkan_visualizer)
         FIND_PACKAGE_ARGS)
     FetchContent_MakeAvailable(hina_vulkan_visualizer)
 endif ()
-
-# Create an alias if upstream target is non-namespaced
 if (NOT TARGET VulkanVisualizer::vulkan_visualizer)
     if (TARGET vulkan_visualizer)
         add_library(VulkanVisualizer::vulkan_visualizer ALIAS vulkan_visualizer)

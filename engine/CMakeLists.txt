@@ -6,8 +6,6 @@ target_include_directories(${lib_name}
     PUBLIC  ${CMAKE_CURRENT_SOURCE_DIR}/cloth
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
 )
-
-# Apply compile options/definitions from setup.cmake
 if (HINAPE_WARNINGS)
     target_compile_options(${lib_name} PRIVATE ${HINAPE_WARNINGS})
 endif ()
@@ -20,8 +18,6 @@ endif ()
 if (HINAPE_PRIVATE_DEFINES)
     target_compile_definitions(${lib_name} PRIVATE ${HINAPE_PRIVATE_DEFINES})
 endif ()
-
-# Auto-detect and enable TBB if available (or fetchable via setup_tbb.cmake)
 include(../cmake/setup_tbb.cmake OPTIONAL)
 if (TARGET TBB::tbb)
     use_tbb(${lib_name})

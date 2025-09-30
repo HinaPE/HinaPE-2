@@ -32,7 +32,7 @@ static void build_grid(int nx, int ny, float spacing, std::vector<float>& xyz, s
             xyz[id * 3 + 2] = y * spacing;
         }
     }
-    for (int x = 0; x < nx; ++x) fixed.push_back((u32) x); // top row fixed
+    for (int x = 0; x < nx; ++x) fixed.push_back((u32) x); 
     for (int y = 0; y < ny - 1; ++y) {
         for (int x = 0; x < nx - 1; ++x) {
             int a = y * nx + x;
@@ -117,7 +117,7 @@ public:
     void destroy(const EngineContext& e, const RendererCaps&) override {
         destroy_gpu_();
         destroy_pipeline_();
-        if (handle_) ::HinaPE::destroy(handle_); // 修正：限定命名空间避免递归解析本成员函�?
+        if (handle_) ::HinaPE::destroy(handle_); 
         handle_ = nullptr;
         dev_    = VK_NULL_HANDLE;
     }
@@ -212,7 +212,7 @@ public:
         std::memcpy(pc.mvp, MVP.m.data(), sizeof(pc.mvp));
         VkDeviceSize offs = 0;
         vkCmdBindVertexBuffers(cmd, 0, 1, &pos_.buf, &offs);
-        // Mesh fill
+
         if (params_.show_mesh && pipe_tri_.pipeline && idx_tri_.buf) {
             pc.color[0]  = 0.55f;
             pc.color[1]  = 0.75f;
@@ -224,7 +224,7 @@ public:
             vkCmdBindIndexBuffer(cmd, idx_tri_.buf, 0, VK_INDEX_TYPE_UINT32);
             vkCmdDrawIndexed(cmd, (uint32_t) tri_count_, 1, 0, 0, 0);
         }
-        // Constraints / wireframe
+
         if (params_.show_constraints && pipe_line_.pipeline && idx_line_.buf && line_count_ > 1) {
             pc.color[0]  = 0.9f;
             pc.color[1]  = 0.9f;
@@ -236,7 +236,7 @@ public:
             vkCmdBindIndexBuffer(cmd, idx_line_.buf, 0, VK_INDEX_TYPE_UINT32);
             vkCmdDrawIndexed(cmd, (uint32_t) line_count_, 1, 0, 0, 0);
         }
-        // Points
+
         if (params_.show_vertices && pipe_point_.pipeline) {
             pc.color[0]  = 1.0f;
             pc.color[1]  = 1.0f;
@@ -307,7 +307,7 @@ private:
     std::vector<u32> fixed_;
     size_t tri_count_{0};
     GPUBuffer pos_{}; GPUBuffer idx_tri_{}; GPUBuffer idx_line_{}; size_t line_count_{0};
-    std::vector<uint32_t> line_indices_; // 新增：存储唯一边索�?
+    std::vector<uint32_t> line_indices_; 
     struct Pipe {
         VkPipeline pipeline{};
         VkPipelineLayout layout{};
@@ -327,7 +327,7 @@ private:
         build_lines_from_tris_();
     }
     void reset_scene_() {
-        if (handle_) ::HinaPE::destroy(handle_); // 修正命名空间限定
+        if (handle_) ::HinaPE::destroy(handle_); 
         build_scene_();
         upload_indices_();
         upload_lines_();
@@ -359,7 +359,7 @@ private:
         destroy_buffer(ctx_, idx_tri_);
         destroy_buffer(ctx_, idx_line_);
     }
-    // 构建唯一边集�?
+
     void build_lines_from_tris_() {
         line_indices_.clear();
         if (tri_count_ % 3 != 0) return;

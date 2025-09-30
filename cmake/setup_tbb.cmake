@@ -1,6 +1,4 @@
 include_guard(GLOBAL)
-
-# Auto-detect or fetch oneTBB without exposing options
 set(_HPE_TBB_VERSION "2022.2.0")
 
 if (NOT TARGET TBB::tbb)
@@ -19,8 +17,6 @@ if (NOT TARGET TBB::tbb)
         add_library(TBB::tbb ALIAS tbb)
     endif ()
 endif ()
-
-# Helper to link TBB if available
 function(use_tbb target)
     if (NOT TARGET ${target})
         message(FATAL_ERROR "use_tbb called with unknown target `${target}`")

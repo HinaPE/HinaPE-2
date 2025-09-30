@@ -1,17 +1,12 @@
 include(CheckCXXCompilerFlag)
-
-# Expect HINAPE_WARN_AS_ERROR to be defined by the root CMakeLists; set a default if absent
 if (NOT DEFINED HINAPE_WARN_AS_ERROR)
     set(HINAPE_WARN_AS_ERROR ON)
 endif ()
-
-# Standard warnings and release optimizations as variables (consumed by targets)
 if (MSVC)
     set(HINAPE_WARNINGS /W4 /permissive- /utf-8 /Zc:__cplusplus)
     if (HINAPE_WARN_AS_ERROR)
         list(APPEND HINAPE_WARNINGS /WX)
     endif ()
-    # Private defines for MSVC
     set(HINAPE_PRIVATE_DEFINES _CRT_SECURE_NO_WARNINGS)
     set(HINAPE_RELEASE_OPTS $<$<CONFIG:Release>:/O2 /Ot /Oi /fp:fast>)
 else ()
@@ -21,8 +16,6 @@ else ()
     endif ()
     set(HINAPE_RELEASE_OPTS $<$<CONFIG:Release>:-O3 -ffast-math -fomit-frame-pointer>)
 endif ()
-
-# Detect AVX2 support and prepare per-file flags (not applied here)
 set(HINAPE_HAVE_AVX2 OFF)
 set(HINAPE_AVX2_FLAGS "")
 if (MSVC)
@@ -43,14 +36,10 @@ else ()
         set(HINAPE_AVX2_FLAGS $<$<CONFIG:Release>:${_f}>)
     endif ()
 endif ()
-
-# Public compile-time defines
 set(HINAPE_PUBLIC_DEFINES "")
 if (HINAPE_HAVE_AVX2)
     list(APPEND HINAPE_PUBLIC_DEFINES HINAPE_HAVE_AVX2=1)
 endif ()
-
-# Report preprocessed configuration
 message(STATUS "HinaPE setup: warnings='${HINAPE_WARNINGS}'")
 message(STATUS "HinaPE setup: release_opts='${HINAPE_RELEASE_OPTS}'")
 message(STATUS "HinaPE setup: have_avx2='${HINAPE_HAVE_AVX2}' avx2_flags='${HINAPE_AVX2_FLAGS}'")

@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.26)
 
 set(EXAMPLE_NAME xpbd_visualizer)
-
-# Compile shaders if glslc is available
 set(SHADER_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/shader)
 set(SHADER_OUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/shaders_bin)
 file(MAKE_DIRECTORY ${SHADER_OUT_DIR})
@@ -28,8 +26,6 @@ else ()
 endif ()
 
 target_link_libraries(${EXAMPLE_NAME} PRIVATE HinaPE)
-
-# Optional Vulkan visualizer linking
 include(../cmake/setup_vulkan_visualizer.cmake OPTIONAL)
 if (COMMAND use_vulkan_visualizer)
     use_vulkan_visualizer(${EXAMPLE_NAME})
