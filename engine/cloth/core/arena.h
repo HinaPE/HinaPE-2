@@ -1,4 +1,3 @@
-
 #ifndef HINAPE_CLOTH_CORE_ARENA_H
 #define HINAPE_CLOTH_CORE_ARENA_H
 
@@ -9,6 +8,8 @@
 #include <memory_resource>
 #include <new>
 #include <type_traits>
+#include <cstdlib>
+#include <vector>
 
 namespace HinaPE::core {
 
@@ -53,7 +54,6 @@ namespace HinaPE::core {
     template <class T>
     using pvec = std::pmr::vector<T>;
 
-} 
+}
 
-#endif 
-
+#endif

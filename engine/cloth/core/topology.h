@@ -1,4 +1,3 @@
-
 #ifndef HINAPE_CLOTH_CORE_TOPOLOGY_H
 #define HINAPE_CLOTH_CORE_TOPOLOGY_H
 
@@ -59,5 +58,4 @@ namespace HinaPE::topo {
 
 } 
 
-#endif 
-
+#endif

@@ -1,5 +1,9 @@
 file(GLOB_RECURSE hpe_src *.h *.cpp)
 
+if (NOT HINAPE_HAVE_AVX2)
+    list(FILTER hpe_src EXCLUDE REGEX "xpbd_avx2.cpp$")
+endif ()
+
 set(lib_name HinaPE)
 add_library(${lib_name} ${hpe_src})
 target_include_directories(${lib_name}
@@ -29,4 +33,3 @@ if (HINAPE_HAVE_AVX2 AND HINAPE_AVX2_FLAGS)
         PROPERTIES COMPILE_OPTIONS "${HINAPE_AVX2_FLAGS}")
     target_compile_definitions(${lib_name} PUBLIC HINAPE_HAVE_AVX2=1)
 endif ()
-

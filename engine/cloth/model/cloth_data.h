@@ -1,4 +1,3 @@
-
 #ifndef HINAPE_CLOTH_MODEL_CLOTH_DATA_H
 #define HINAPE_CLOTH_MODEL_CLOTH_DATA_H
 
@@ -49,7 +48,4 @@ namespace HinaPE::model {
 
 } 
 
-#endif 
-
-
-
+#endif
