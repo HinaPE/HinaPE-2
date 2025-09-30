@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <span>
+#include <utility>
 
 namespace HinaPE {
 
@@ -50,12 +51,16 @@ namespace HinaPE {
         usize count{};
     };
 
-    using Handle = void*;
+    namespace detail {
+        struct Sim;
+    }
 
-    Handle create(const InitDesc& desc);
-    void destroy(Handle h);
-    void step(Handle h, const StepParams& params);
-    DynamicView map_dynamic(Handle h);
+    using Handle = detail::Sim*;
+
+    [[nodiscard]] Handle create(const InitDesc& desc);
+    void destroy(Handle h) noexcept;
+    void step(Handle h, const StepParams& params) noexcept;
+    [[nodiscard]] DynamicView map_dynamic(Handle h) noexcept;
 
 } // namespace HinaPE
 #endif // HINAPE_XPBD_H
