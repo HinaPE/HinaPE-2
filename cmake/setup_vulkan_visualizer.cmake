@@ -7,12 +7,12 @@ endif ()
 
 if (NOT TARGET VulkanVisualizer::vulkan_visualizer)
     include(FetchContent)
-    FetchContent_Declare(hina_vulkan_visualizer
+    FetchContent_Declare(vulkan_visualizer
         GIT_REPOSITORY https://github.com/HinaPE/vulkan-visualizer.git
         GIT_TAG        ${_HPE_VV_TAG}
         GIT_SHALLOW    TRUE
         FIND_PACKAGE_ARGS)
-    FetchContent_MakeAvailable(hina_vulkan_visualizer)
+    FetchContent_MakeAvailable(vulkan_visualizer)
 endif ()
 if (NOT TARGET VulkanVisualizer::vulkan_visualizer)
     if (TARGET vulkan_visualizer)
