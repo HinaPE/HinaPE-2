@@ -189,10 +189,10 @@ TEST_CASE("zero_dt_is_safe") {
     StepParams sp{}; sp.dt = 0.0f; step(h, sp); CHECK(std::isfinite(v.pos_y[0])); destroy(h);
 }
 
-TEST_CASE("backend_request_avx2_matches_native") {
+TEST_CASE("backend_request_simd_matches_native") {
     std::vector<float> xyz; std::vector<u32> tris; std::vector<u32> fixed; make_grid(10, 10, 0.05f, xyz, tris, fixed);
     SolvePolicy solve{}; solve.iterations=6; solve.substeps=2;
-    ExecPolicy exN{}; exN.backend = ExecPolicy::Backend::Native; ExecPolicy exA{}; exA.backend = ExecPolicy::Backend::Avx2;
+    ExecPolicy exN{}; exN.backend = ExecPolicy::Backend::Native; ExecPolicy exA{}; exA.backend = ExecPolicy::Backend::Simd;
     auto hN = create(InitDesc{std::span<const float>(xyz.data(), xyz.size()), std::span<const u32>(tris.data(), tris.size()), std::span<const u32>(fixed.data(), fixed.size()), exN, solve}); auto hA = create(InitDesc{std::span<const float>(xyz.data(), xyz.size()), std::span<const u32>(tris.data(), tris.size()), std::span<const u32>(fixed.data(), fixed.size()), exA, solve});
     REQUIRE(hN != nullptr); REQUIRE(hA != nullptr);
     auto vN = map_dynamic(hN); auto vA = map_dynamic(hA);

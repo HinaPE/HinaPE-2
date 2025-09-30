@@ -24,8 +24,7 @@ if (TARGET TBB::tbb)
     target_compile_definitions(${lib_name} PUBLIC HINAPE_HAVE_TBB=1)
 endif ()
 
-if (HINAPE_HAVE_AVX2 AND HINAPE_AVX2_FLAGS)
-    set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/cloth/xpbd_avx2.cpp
-        PROPERTIES COMPILE_OPTIONS "${HINAPE_AVX2_FLAGS}")
-    target_compile_definitions(${lib_name} PUBLIC HINAPE_HAVE_AVX2=1)
+include(../cmake/setup_highway.cmake OPTIONAL)
+if (COMMAND use_highway)
+    use_highway(${lib_name})
 endif ()
