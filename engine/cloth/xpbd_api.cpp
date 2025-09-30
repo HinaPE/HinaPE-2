@@ -1,8 +1,8 @@
 #include "cloth.h"
 
-#include "xpbd_native.h"
+
 #ifdef HINAPE_HAVE_AVX2
-#include "xpbd_avx2.h"
+
 #endif
 namespace HinaPE {
 
@@ -28,5 +28,6 @@ namespace HinaPE {
     }
 
 } // namespace HinaPE
+
 
 

@@ -40,7 +40,7 @@ file(GLOB_RECURSE hpe_src *.h *.cpp)
 
 set(lib_name HinaPE)
 add_library(${lib_name} ${hpe_src})
-target_include_directories(${lib_name} PUBLIC ${CMAKE_SOURCE_DIR}/include)
+target_include_directories(${lib_name} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/cloth)
 # keep engine headers private for internal compilation
 target_include_directories(${lib_name} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 hinape_apply_common_warnings(${lib_name})
@@ -80,3 +80,4 @@ if (HINAPE_WITH_AVX2)
         target_compile_definitions(${lib_name} PUBLIC HINAPE_HAVE_AVX2=1)
     endif ()
 endif ()
+
