@@ -26,6 +26,9 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Setup MSVC
+        uses: microsoft/setup-msvc-dev-cmd@v1
+
       - name: Cache third-party downloads (_deps)
         uses: actions/cache@v4
         with:
