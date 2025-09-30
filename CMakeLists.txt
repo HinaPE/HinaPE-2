@@ -12,6 +12,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+include(cmake/setup.cmake)
+
 add_subdirectory(engine)
 
 if (HINAPE_BUILD_TESTS)
