@@ -515,8 +515,6 @@ namespace HinaPE {
 
     } // namespace detail
 
-    using detail::Sim;
-
     [[nodiscard]] Handle create(const InitDesc& desc) {
         std::unique_ptr<detail::Sim> sim;
         detail::build_states(desc, sim);

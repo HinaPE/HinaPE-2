@@ -314,7 +314,6 @@ TEST_CASE("backend_equivalence_native_vs_avx2") {
     DynamicView vA = map_dynamic(h_avx2);
     StepParams sp{};
     for (int i = 0; i < 60; ++i) { step(h_native, sp); step(h_avx2, sp); }
-    // 允许在未启用编译期 AVX2 时仍通过（此时 Avx2 后端会回退 native），因此一致性仍应满足
     for (size_t i = 0; i < vN.count; ++i) {
         CHECK_THAT(vN.pos_x[i], WithinAbs(vA.pos_x[i], 1e-5f));
         CHECK_THAT(vN.pos_y[i], WithinAbs(vA.pos_y[i], 1e-5f));

@@ -20,6 +20,7 @@ if (HINAPE_BUILD_TESTS)
 endif ()
 
 if (HINAPE_BUILD_EXAMPLES)
+    include(cmake/setup_vulkan_visualizer.cmake)
     add_executable(HinaPEApp main.cpp)
     target_link_libraries(HinaPEApp PRIVATE HinaPE)
 endif ()
