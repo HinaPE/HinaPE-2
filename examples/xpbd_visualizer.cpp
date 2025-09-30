@@ -32,7 +32,10 @@ static void build_grid(int nx, int ny, float spacing, std::vector<float>& xyz, s
             xyz[id * 3 + 2] = y * spacing;
         }
     }
-    for (int x = 0; x < nx; ++x) fixed.push_back((u32) x); 
+    if (nx > 0) {
+        fixed.push_back(0u);
+        if (nx > 1) fixed.push_back((u32)(nx - 1));
+    }
     for (int y = 0; y < ny - 1; ++y) {
         for (int x = 0; x < nx - 1; ++x) {
             int a = y * nx + x;
@@ -299,13 +302,13 @@ private:
         float fixed_dt{1.0f / 120.f};
         int substeps{2};
         int iterations{10};
-        float damping{0.02f};
+        float damping{0.00f};
         float compliance{0.0f};
         vv::float3 gravity{0.0f, -9.81f, 0.0f};
-        bool show_mesh{true};
-        bool show_vertices{true};
+        bool show_mesh{false};
+        bool show_vertices{false};
         bool show_constraints{true};
-        float point_size{5.0f};
+        float point_size{2.0f};
     } params_{};
     EngineContext ctx_{};
     VkDevice dev_{VK_NULL_HANDLE};
