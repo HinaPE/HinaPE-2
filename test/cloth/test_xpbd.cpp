@@ -291,3 +291,35 @@ TEST_CASE("zero_dt_fallback") {
     CHECK(std::isfinite(v.pos_y[0]));
     destroy(h);
 }
+
+TEST_CASE("backend_equivalence_native_vs_avx2") {
+    std::vector<float> xyz;
+    std::vector<u32> tris;
+    std::vector<u32> fixed;
+    int nx = 10;
+    int ny = 10;
+    make_grid(nx, ny, 0.05f, xyz, tris, fixed);
+    SolvePolicy solve{}; // default: compliance 0, deterministic
+    solve.iterations = 6;
+    solve.substeps = 2;
+    ExecPolicy exec_native{}; exec_native.backend = ExecPolicy::Backend::Native;
+    ExecPolicy exec_avx2{};   exec_avx2.backend   = ExecPolicy::Backend::Avx2;
+    InitDesc init_native{std::span<const float>(xyz.data(), xyz.size()), std::span<const u32>(tris.data(), tris.size()), std::span<const u32>(fixed.data(), fixed.size()), exec_native, solve};
+    InitDesc init_avx2  {std::span<const float>(xyz.data(), xyz.size()), std::span<const u32>(tris.data(), tris.size()), std::span<const u32>(fixed.data(), fixed.size()), exec_avx2, solve};
+    Handle h_native = create(init_native);
+    Handle h_avx2   = create(init_avx2);
+    REQUIRE(h_native != nullptr);
+    REQUIRE(h_avx2 != nullptr);
+    DynamicView vN = map_dynamic(h_native);
+    DynamicView vA = map_dynamic(h_avx2);
+    StepParams sp{};
+    for (int i = 0; i < 60; ++i) { step(h_native, sp); step(h_avx2, sp); }
+    // 允许在未启用编译期 AVX2 时仍通过（此时 Avx2 后端会回退 native），因此一致性仍应满足
+    for (size_t i = 0; i < vN.count; ++i) {
+        CHECK_THAT(vN.pos_x[i], WithinAbs(vA.pos_x[i], 1e-5f));
+        CHECK_THAT(vN.pos_y[i], WithinAbs(vA.pos_y[i], 1e-5f));
+        CHECK_THAT(vN.pos_z[i], WithinAbs(vA.pos_z[i], 1e-5f));
+    }
+    destroy(h_native);
+    destroy(h_avx2);
+}

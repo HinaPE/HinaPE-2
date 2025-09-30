@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.26)
 project(HinaPE LANGUAGES CXX)
 
-option(HINAPE_WARN_AS_ERROR "Treat compiler warnings as errors" OFF)
+option(HINAPE_WARN_AS_ERROR "treat compiler warnings as errors" ON)
 option(HINAPE_WITH_CUDA "enable CUDA backend" ON)
 option(HINAPE_WITH_VULKAN "enable Vulkan compute backend" ON)
 option(HINAPE_WITH_TBB "enable TBB" ON)

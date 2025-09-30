@@ -12,7 +12,7 @@ namespace HinaPE {
     using usize = std::size_t;
 
     struct ExecPolicy {
-        enum class Backend { Native };
+        enum class Backend { Native, Avx2 }; // AVX2 backend option
         Backend backend{Backend::Native};
         int threads{0};
         bool deterministic{true};
@@ -30,7 +30,7 @@ namespace HinaPE {
         std::span<const f32> positions_xyz;
         std::span<const u32> triangles;
         std::span<const u32> fixed_indices;
-        ExecPolicy exec{};
+        ExecPolicy exec{};   // user can request Avx2
         SolvePolicy solve{};
     };
 
@@ -51,9 +51,7 @@ namespace HinaPE {
         usize count{};
     };
 
-    namespace detail {
-        struct Sim;
-    }
+    namespace detail { struct Sim; }
 
     using Handle = detail::Sim*;
 
