@@ -263,9 +263,18 @@ public:
             ImGui::Checkbox("Simulate", &params_.simulate);
             ImGui::SliderFloat("Fixed dt", &params_.fixed_dt, 1.0f / 240.f, 1.0f / 30.f, "%.4f");
             ImGui::SliderInt("Substeps", &params_.substeps, 1, 8);
-            ImGui::SliderInt("Iterations", &params_.iterations, 1, 40);
+            ImGui::SliderInt("Iterations", &params_.iterations, 1, 60);
             ImGui::SliderFloat("Damping", &params_.damping, 0.0f, 1.0f);
-            ImGui::SliderFloat3("Gravity", &params_.gravity.x, -30.f, 30.f);
+            ImGui::SliderFloat3("Gravity", &params_.gravity.x, -30.f, 30.f);            ImGui::Separator();
+            static int backend_idx = 0; const char* backends[] = {"Native","AVX2"};
+            if (ImGui::Combo("Backend", &backend_idx, backends, 2)) {
+                ExecPolicy ex{}; ex.backend = backend_idx==1 ? ExecPolicy::Backend::Avx2 : ExecPolicy::Backend::Native;
+                SolvePolicy sv{}; sv.iterations = params_.iterations; sv.substeps = params_.substeps; sv.damping = params_.damping;
+                if (handle_) ::HinaPE::destroy(handle_);
+                InitDesc init{std::span<const float>(xyz_.data(), xyz_.size()), std::span<const u32>(tris_.data(), tris_.size()), std::span<const u32>(fixed_.data(), fixed_.size()), ex, sv};
+                handle_ = create(init);
+            }
+            ImGui::SliderFloat("Compliance", &params_.compliance, 0.0f, 1e-1f, "%.6f");
             ImGui::Separator();
             ImGui::Checkbox("Mesh", &params_.show_mesh);
             ImGui::SameLine();
@@ -291,6 +300,7 @@ private:
         int substeps{2};
         int iterations{10};
         float damping{0.02f};
+        float compliance{0.0f};
         vv::float3 gravity{0.0f, -9.81f, 0.0f};
         bool show_mesh{true};
         bool show_vertices{true};
@@ -320,7 +330,7 @@ private:
         SolvePolicy solve{};
         solve.substeps   = params_.substeps;
         solve.iterations = params_.iterations;
-        solve.damping    = params_.damping;
+        solve.damping = params_.damping; solve.compliance_stretch = params_.compliance;
         InitDesc init{std::span<const float>(xyz_.data(), xyz_.size()), std::span<const u32>(tris_.data(), tris_.size()), std::span<const u32>(fixed_.data(), fixed_.size()), exec, solve};
         handle_    = create(init);
         tri_count_ = tris_.size();
@@ -549,3 +559,7 @@ int main() {
     return 0;
 }
 #endif
+
+
+
+
