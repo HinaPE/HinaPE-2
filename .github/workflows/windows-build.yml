@@ -1,0 +1,74 @@
+name: windows-build
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+  workflow_dispatch: {}
+
+concurrency:
+  group: windows-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        build_type: [Release, Debug]
+    env:
+      VULKAN_SDK_VERSION: latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Cache third-party downloads (_deps)
+        uses: actions/cache@v4
+        with:
+          path: build/_deps
+          key: deps-${{ runner.os }}-${{ matrix.build_type }}-${{ hashFiles('CMakeLists.txt','cmake/*.cmake') }}
+          restore-keys: |
+            deps-${{ runner.os }}-${{ matrix.build_type }}-
+            deps-${{ runner.os }}-
+
+      - name: Install Vulkan SDK
+        uses: jakoch/install-vulkan-sdk-action@v1.2.5
+        with:
+          version: ${{ env.VULKAN_SDK_VERSION }}
+          components: Vulkan-Headers,Vulkan-Loader,Glslang,SPIRV-Tools,SPIRV-Headers
+          cache: true
+          quiet: true
+
+      - name: Verify Vulkan SDK tools
+        shell: powershell
+        run: |
+          Write-Host "VULKAN_SDK=$env:VULKAN_SDK"
+          if (Test-Path "$env:VULKAN_SDK\Bin\glslc.exe") { & "$env:VULKAN_SDK\Bin\glslc.exe" --version } else { Write-Host 'glslc not found' }
+
+      - name: Configure (Ninja Multi-Config)
+        shell: powershell
+        run: |
+          cmake -S . -B build -G "Ninja Multi-Config" \
+            -DHINAPE_BUILD_TESTS=ON \
+            -DHINAPE_BUILD_EXAMPLES=ON \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
+      - name: Build (${{ matrix.build_type }})
+        shell: powershell
+        run: |
+          cmake --build build --config ${{ matrix.build_type }} --parallel
+
+      - name: Run tests (${{ matrix.build_type }})
+        shell: powershell
+        env:
+          CTEST_OUTPUT_ON_FAILURE: 1
+        run: |
+          # Ensure TBB runtime is on PATH for tests
+          $tbb = Get-ChildItem -Recurse -File -Path build -Filter "tbb12*.dll" | Select-Object -First 1
+          if ($tbb) { $env:PATH = "$($tbb.DirectoryName);$env:PATH" }
+          ctest --test-dir build -C ${{ matrix.build_type }} --output-on-failure
+

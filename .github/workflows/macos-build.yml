@@ -1,0 +1,73 @@
+name: macos-build
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+  workflow_dispatch: {}
+
+concurrency:
+  group: macos-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        build_type: [Release, Debug]
+    env:
+      VULKAN_SDK_VERSION: latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install build tools
+        run: |
+          brew update
+          brew install cmake ninja || true
+          cmake --version
+          ninja --version || true
+
+      - name: Install Vulkan SDK (MoltenVK)
+        uses: jakoch/install-vulkan-sdk-action@v1.2.5
+        with:
+          version: ${{ env.VULKAN_SDK_VERSION }}
+          components: Vulkan-Headers,Vulkan-Loader,MoltenVK,Glslang,SPIRV-Tools,SPIRV-Headers
+          cache: true
+          quiet: true
+
+      - name: Cache third-party downloads (_deps)
+        uses: actions/cache@v4
+        with:
+          path: build/_deps
+          key: deps-${{ runner.os }}-${{ matrix.build_type }}-${{ hashFiles('CMakeLists.txt','cmake/*.cmake') }}
+          restore-keys: |
+            deps-${{ runner.os }}-${{ matrix.build_type }}-
+            deps-${{ runner.os }}-
+
+      - name: Configure (${{ matrix.build_type }})
+        run: |
+          cmake -S . -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+            -DHINAPE_BUILD_TESTS=ON \
+            -DHINAPE_BUILD_EXAMPLES=ON \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
+      - name: Build (${{ matrix.build_type }})
+        run: |
+          cmake --build build --config ${{ matrix.build_type }} --parallel
+
+      - name: Run tests (${{ matrix.build_type }})
+        env:
+          CTEST_OUTPUT_ON_FAILURE: 1
+        run: |
+          # Ensure TBB runtime is found when running tests
+          LIB_DIR=$(dirname $(find build -type f -name "libtbb*.dylib" -print -quit) 2>/dev/null || echo "")
+          if [ -n "$LIB_DIR" ]; then export DYLD_LIBRARY_PATH="$LIB_DIR:$DYLD_LIBRARY_PATH"; fi
+          ctest --test-dir build -C ${{ matrix.build_type }} --output-on-failure
+
