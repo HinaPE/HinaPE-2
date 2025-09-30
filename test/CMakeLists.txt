@@ -13,4 +13,8 @@ FetchContent_MakeAvailable(Catch2)
 
 add_executable(test_xpbd cloth/test_xpbd.cpp)
 target_link_libraries(test_xpbd PRIVATE HinaPE Catch2::Catch2WithMain)
+include(../cmake/setup_tbb.cmake OPTIONAL)
+if (COMMAND use_tbb)
+    use_tbb(test_xpbd)
+endif ()
 add_test(NAME xpbd COMMAND test_xpbd)

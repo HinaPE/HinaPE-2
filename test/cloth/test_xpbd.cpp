@@ -205,4 +205,56 @@ TEST_CASE("backend_request_avx2_matches_native") {
     destroy(hN); destroy(hA);
 }
 
+TEST_CASE("backend_request_tbb_matches_native") {
+    std::vector<float> xyz; std::vector<u32> tris; std::vector<u32> fixed; make_grid(10, 10, 0.05f, xyz, tris, fixed);
+    SolvePolicy solve{}; solve.iterations=6; solve.substeps=2;
+    ExecPolicy exN{}; exN.backend = ExecPolicy::Backend::Native; ExecPolicy exT{}; exT.backend = ExecPolicy::Backend::Tbb;
+    auto hN = create(InitDesc{std::span<const float>(xyz.data(), xyz.size()), std::span<const u32>(tris.data(), tris.size()), std::span<const u32>(fixed.data(), fixed.size()), exN, solve});
+    auto hT = create(InitDesc{std::span<const float>(xyz.data(), xyz.size()), std::span<const u32>(tris.data(), tris.size()), std::span<const u32>(fixed.data(), fixed.size()), exT, solve});
+    REQUIRE(hN != nullptr); REQUIRE(hT != nullptr);
+    auto vN = map_dynamic(hN); auto vT = map_dynamic(hT);
+    for (int i = 0; i < 60; ++i) { step(hN, StepParams{}); step(hT, StepParams{}); }
+    for (size_t i = 0; i < vN.count; ++i) {
+        CHECK_THAT(vN.pos_x[i], WithinAbs(vT.pos_x[i], 1e-5f));
+        CHECK_THAT(vN.pos_y[i], WithinAbs(vT.pos_y[i], 1e-5f));
+        CHECK_THAT(vN.pos_z[i], WithinAbs(vT.pos_z[i], 1e-5f));
+    }
+    destroy(hN); destroy(hT);
+}
+
+TEST_CASE("determinism_same_setup_tbb") {
+    std::vector<float> xyz; std::vector<u32> tris; std::vector<u32> fixed; make_grid(12, 12, 0.07f, xyz, tris, fixed);
+    SolvePolicy solve{}; solve.iterations=12; solve.substeps=2;
+    ExecPolicy ex{}; ex.backend = ExecPolicy::Backend::Tbb;
+    auto ha = create(InitDesc{xyz, tris, fixed, ex, solve});
+    auto hb = create(InitDesc{xyz, tris, fixed, ex, solve});
+    REQUIRE(ha != nullptr); REQUIRE(hb != nullptr);
+    auto va = map_dynamic(ha); auto vb = map_dynamic(hb);
+    for (int i = 0; i < 120; ++i) { step(ha, StepParams{}); step(hb, StepParams{}); }
+    for (size_t i = 0; i < va.count; ++i) {
+        CHECK_THAT(va.pos_x[i], WithinAbs(vb.pos_x[i], 1e-7f));
+        CHECK_THAT(va.pos_y[i], WithinAbs(vb.pos_y[i], 1e-7f));
+        CHECK_THAT(va.pos_z[i], WithinAbs(vb.pos_z[i], 1e-7f));
+    }
+    destroy(ha); destroy(hb);
+}
+
+TEST_CASE("tbb_threads_variants_match") {
+    std::vector<float> xyz; std::vector<u32> tris; std::vector<u32> fixed; make_grid(10, 10, 0.05f, xyz, tris, fixed);
+    SolvePolicy solve{}; solve.iterations=8; solve.substeps=2;
+    ExecPolicy exA{}; exA.backend = ExecPolicy::Backend::Tbb; exA.threads = 0; // implementation decides
+    ExecPolicy exB{}; exB.backend = ExecPolicy::Backend::Tbb; exB.threads = 2; // limit parallelism explicitly
+    auto hA = create(InitDesc{xyz, tris, fixed, exA, solve});
+    auto hB = create(InitDesc{xyz, tris, fixed, exB, solve});
+    REQUIRE(hA != nullptr); REQUIRE(hB != nullptr);
+    auto vA = map_dynamic(hA); auto vB = map_dynamic(hB);
+    for (int i = 0; i < 80; ++i) { step(hA, StepParams{}); step(hB, StepParams{}); }
+    for (size_t i = 0; i < vA.count; ++i) {
+        CHECK_THAT(vA.pos_x[i], WithinAbs(vB.pos_x[i], 1e-5f));
+        CHECK_THAT(vA.pos_y[i], WithinAbs(vB.pos_y[i], 1e-5f));
+        CHECK_THAT(vA.pos_z[i], WithinAbs(vB.pos_z[i], 1e-5f));
+    }
+    destroy(hA); destroy(hB);
+}
+
 
