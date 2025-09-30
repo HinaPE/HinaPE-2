@@ -12,7 +12,7 @@ namespace HinaPE {
     using usize = std::size_t;
 
     struct ExecPolicy {
-        enum class Backend { Native, Avx2 };
+        enum class Backend { Native, Avx2, Tbb };
         Backend backend{Backend::Native};
         int threads{0};
         bool deterministic{true};
@@ -62,6 +62,9 @@ namespace HinaPE {
         ISim* make_native(const InitDesc& desc);
 #if defined(HINAPE_HAVE_AVX2)
         ISim* make_avx2(const InitDesc& desc);
+#endif
+#if defined(HINAPE_HAVE_TBB)
+        ISim* make_tbb(const InitDesc& desc);
 #endif
     } 
 

@@ -9,6 +9,13 @@ Handle create(const InitDesc& desc) {
         return detail::make_native(desc);
 #endif
     }
+    if (desc.exec.backend == Backend::Tbb) {
+#if defined(HINAPE_HAVE_TBB)
+        return detail::make_tbb(desc);
+#else
+        return detail::make_native(desc);
+#endif
+    }
     return detail::make_native(desc);
 }
 void destroy(Handle h) noexcept { delete h; }

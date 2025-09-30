@@ -269,9 +269,14 @@ public:
             ImGui::SliderInt("Iterations", &params_.iterations, 1, 60);
             ImGui::SliderFloat("Damping", &params_.damping, 0.0f, 1.0f);
             ImGui::SliderFloat3("Gravity", &params_.gravity.x, -30.f, 30.f);            ImGui::Separator();
-            static int backend_idx = 0; const char* backends[] = {"Native","AVX2"};
-            if (ImGui::Combo("Backend", &backend_idx, backends, 2)) {
-                ExecPolicy ex{}; ex.backend = backend_idx==1 ? ExecPolicy::Backend::Avx2 : ExecPolicy::Backend::Native;
+            static int backend_idx = 0; const char* backends[] = {"Native","AVX2","TBB"};
+            if (ImGui::Combo("Backend", &backend_idx, backends, IM_ARRAYSIZE(backends))) {
+                ExecPolicy ex{};
+                switch (backend_idx) {
+                    case 1: ex.backend = ExecPolicy::Backend::Avx2; break;
+                    case 2: ex.backend = ExecPolicy::Backend::Tbb;  break;
+                    default: ex.backend = ExecPolicy::Backend::Native; break;
+                }
                 SolvePolicy sv{}; sv.iterations = params_.iterations; sv.substeps = params_.substeps; sv.damping = params_.damping;
                 if (handle_) ::HinaPE::destroy(handle_);
                 InitDesc init{std::span<const float>(xyz_.data(), xyz_.size()), std::span<const u32>(tris_.data(), tris_.size()), std::span<const u32>(fixed_.data(), fixed_.size()), ex, sv};
