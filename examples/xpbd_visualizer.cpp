@@ -7,6 +7,7 @@
 #include <cstring>
 #include <imgui.h>
 #include <stdexcept>
+#include <set>
 #include <vector>
 #include <vk_engine.h>
 #include <vk_mem_alloc.h>
@@ -149,8 +150,7 @@ public:
     }
 
     void record_graphics(VkCommandBuffer cmd, const EngineContext&, const FrameContext& f) override {
-        if (!pipe_.pipeline) return;
-        if (f.color_attachments.empty()) return;
+        if ((!pipe_tri_.pipeline && !pipe_line_.pipeline) || f.color_attachments.empty()) return;
         const auto& color = f.color_attachments.front();
         const auto* depth = f.depth_attachment;
         auto barrier      = [&](VkImage img, VkImageLayout oldL, VkImageLayout newL, VkPipelineStageFlags2 src, VkPipelineStageFlags2 dst, VkAccessFlags2 sa, VkAccessFlags2 da, VkImageAspectFlags aspect) {
@@ -210,18 +210,43 @@ public:
             float _pad2;
         } pc{};
         std::memcpy(pc.mvp, MVP.m.data(), sizeof(pc.mvp));
-        pc.color[0]       = 0.7f;
-        pc.color[1]       = 0.9f;
-        pc.color[2]       = 1.0f;
-        pc.color[3]       = 1.0f;
-        pc.pointSize      = 4.0f;
         VkDeviceSize offs = 0;
         vkCmdBindVertexBuffers(cmd, 0, 1, &pos_.buf, &offs);
-        if (idx_tri_.buf) {
-            vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_.pipeline);
-            vkCmdPushConstants(cmd, pipe_.layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PC), &pc);
+        // Mesh fill
+        if (params_.show_mesh && pipe_tri_.pipeline && idx_tri_.buf) {
+            pc.color[0]  = 0.55f;
+            pc.color[1]  = 0.75f;
+            pc.color[2]  = 0.95f;
+            pc.color[3]  = 1.0f;
+            pc.pointSize = params_.point_size;
+            vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_tri_.pipeline);
+            vkCmdPushConstants(cmd, pipe_tri_.layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PC), &pc);
             vkCmdBindIndexBuffer(cmd, idx_tri_.buf, 0, VK_INDEX_TYPE_UINT32);
             vkCmdDrawIndexed(cmd, (uint32_t) tri_count_, 1, 0, 0, 0);
+        }
+        // Constraints / wireframe
+        if (params_.show_constraints && pipe_line_.pipeline && idx_line_.buf && line_count_ > 1) {
+            pc.color[0]  = 0.9f;
+            pc.color[1]  = 0.9f;
+            pc.color[2]  = 0.9f;
+            pc.color[3]  = 1.0f;
+            pc.pointSize = params_.point_size;
+            vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_line_.pipeline);
+            vkCmdPushConstants(cmd, pipe_line_.layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PC), &pc);
+            vkCmdBindIndexBuffer(cmd, idx_line_.buf, 0, VK_INDEX_TYPE_UINT32);
+            vkCmdDrawIndexed(cmd, (uint32_t) line_count_, 1, 0, 0, 0);
+        }
+        // Points
+        if (params_.show_vertices && pipe_point_.pipeline) {
+            pc.color[0]  = 1.0f;
+            pc.color[1]  = 1.0f;
+            pc.color[2]  = 1.0f;
+            pc.color[3]  = 1.0f;
+            pc.pointSize = params_.point_size;
+            vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_point_.pipeline);
+            vkCmdPushConstants(cmd, pipe_point_.layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PC), &pc);
+            uint32_t vertCount = (uint32_t) (xyz_.size() / 3);
+            vkCmdDraw(cmd, vertCount, 1, 0, 0);
         }
         vkCmdEndRendering(cmd);
         barrier(color.image, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT, VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT, color.aspect);
@@ -241,6 +266,13 @@ public:
             ImGui::SliderInt("Iterations", &params_.iterations, 1, 40);
             ImGui::SliderFloat("Damping", &params_.damping, 0.0f, 1.0f);
             ImGui::SliderFloat3("Gravity", &params_.gravity.x, -30.f, 30.f);
+            ImGui::Separator();
+            ImGui::Checkbox("Mesh", &params_.show_mesh);
+            ImGui::SameLine();
+            ImGui::Checkbox("Wire", &params_.show_constraints);
+            ImGui::SameLine();
+            ImGui::Checkbox("Points", &params_.show_vertices);
+            ImGui::SliderFloat("Point Size", &params_.point_size, 1.0f, 12.0f);
             if (ImGui::Button("Reset")) {
                 reset_scene_();
             }
@@ -260,6 +292,10 @@ private:
         int iterations{10};
         float damping{0.02f};
         vv::float3 gravity{0.0f, -9.81f, 0.0f};
+        bool show_mesh{true};
+        bool show_vertices{true};
+        bool show_constraints{true};
+        float point_size{5.0f};
     } params_{};
     EngineContext ctx_{};
     VkDevice dev_{VK_NULL_HANDLE};
@@ -270,12 +306,12 @@ private:
     std::vector<u32> tris_;
     std::vector<u32> fixed_;
     size_t tri_count_{0};
-    GPUBuffer pos_{};
-    GPUBuffer idx_tri_{};
+    GPUBuffer pos_{}; GPUBuffer idx_tri_{}; GPUBuffer idx_line_{}; size_t line_count_{0};
+    std::vector<uint32_t> line_indices_; // 新增：存储唯一边索引
     struct Pipe {
         VkPipeline pipeline{};
         VkPipelineLayout layout{};
-    } pipe_{};
+    } pipe_tri_{}, pipe_line_{}, pipe_point_{};
 
     void build_scene_() {
         int nx = 40, ny = 40;
@@ -288,25 +324,67 @@ private:
         InitDesc init{std::span<const float>(xyz_.data(), xyz_.size()), std::span<const u32>(tris_.data(), tris_.size()), std::span<const u32>(fixed_.data(), fixed_.size()), exec, solve};
         handle_    = create(init);
         tri_count_ = tris_.size();
+        build_lines_from_tris_();
     }
     void reset_scene_() {
         if (handle_) ::HinaPE::destroy(handle_); // 修正命名空间限定
         build_scene_();
         upload_indices_();
+        upload_lines_();
     }
     void build_gpu_() {
         size_t vertCount = xyz_.size() / 3;
         create_buffer(ctx_, vertCount * sizeof(float) * 3, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, true, pos_);
         create_buffer(ctx_, tri_count_ * sizeof(uint32_t), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, true, idx_tri_);
+        create_buffer(ctx_, std::max<size_t>(2, line_count_) * sizeof(uint32_t), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, true, idx_line_);
         upload_indices_();
+        upload_lines_();
     }
     void upload_indices_() {
         if (!idx_tri_.mapped) return;
         std::memcpy(idx_tri_.mapped, tris_.data(), tri_count_ * sizeof(uint32_t));
     }
+    void upload_lines_() {
+        if(line_indices_.empty()) return;
+        size_t needBytes = line_indices_.size()*sizeof(uint32_t);
+        if(needBytes > idx_line_.size){
+            destroy_buffer(ctx_, idx_line_);
+            create_buffer(ctx_, needBytes, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, true, idx_line_);
+        }
+        if(!idx_line_.mapped) return;
+        std::memcpy(idx_line_.mapped, line_indices_.data(), needBytes);
+    }
     void destroy_gpu_() {
         destroy_buffer(ctx_, pos_);
         destroy_buffer(ctx_, idx_tri_);
+        destroy_buffer(ctx_, idx_line_);
+    }
+    // 构建唯一边集合
+    void build_lines_from_tris_() {
+        line_indices_.clear();
+        if (tri_count_ % 3 != 0) return;
+        std::vector<std::pair<uint32_t, uint32_t>> edges;
+        edges.reserve(tri_count_);
+        for (size_t t = 0; t < tri_count_; t += 3) {
+            uint32_t a = tris_[t];
+            uint32_t b = tris_[t + 1];
+            uint32_t c = tris_[t + 2];
+            auto add_edge = [&](uint32_t i, uint32_t j) {
+                if (i > j) std::swap(i, j);
+                edges.emplace_back(i, j);
+            };
+            add_edge(a, b);
+            add_edge(b, c);
+            add_edge(c, a);
+        }
+        std::sort(edges.begin(), edges.end());
+        edges.erase(std::unique(edges.begin(), edges.end()), edges.end());
+        line_indices_.reserve(edges.size() * 2);
+        for (auto &e : edges) {
+            line_indices_.push_back(e.first);
+            line_indices_.push_back(e.second);
+        }
+        line_count_ = line_indices_.size();
     }
 
     void step_sim_(float dt) {
@@ -364,6 +442,8 @@ private:
         rs.cullMode    = VK_CULL_MODE_NONE;
         rs.frontFace   = VK_FRONT_FACE_COUNTER_CLOCKWISE;
         rs.lineWidth   = 1.0f;
+        VkPipelineRasterizationStateCreateInfo rsLine = rs;
+        rsLine.polygonMode = VK_POLYGON_MODE_FILL;
         VkPipelineMultisampleStateCreateInfo ms{VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO};
         ms.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
         VkPipelineDepthStencilStateCreateInfo ds{VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO};
@@ -383,37 +463,49 @@ private:
         VkPipelineLayoutCreateInfo lci{VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};
         lci.pushConstantRangeCount = 1;
         lci.pPushConstantRanges    = &pcr;
-        VK_CHECK(vkCreatePipelineLayout(dev_, &lci, nullptr, &pipe_.layout));
+        VK_CHECK(vkCreatePipelineLayout(dev_, &lci, nullptr, &pipe_tri_.layout));
+        pipe_line_.layout = pipe_tri_.layout;
+        pipe_point_.layout = pipe_tri_.layout;
         VkPipelineRenderingCreateInfo rinfo{VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO};
         VkFormat colorFmt             = VK_FORMAT_B8G8R8A8_UNORM;
         VkFormat depthFmt             = VK_FORMAT_D32_SFLOAT;
         rinfo.colorAttachmentCount    = 1;
         rinfo.pColorAttachmentFormats = &colorFmt;
         rinfo.depthAttachmentFormat   = depthFmt;
-        VkPipelineInputAssemblyStateCreateInfo ia{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO};
-        ia.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-        VkGraphicsPipelineCreateInfo pci{VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO};
-        pci.pNext               = &rinfo;
-        pci.stageCount          = 2;
-        pci.pStages             = st;
-        pci.pVertexInputState   = &vi;
-        pci.pInputAssemblyState = &ia;
-        pci.pViewportState      = &vp;
-        pci.pRasterizationState = &rs;
-        pci.pMultisampleState   = &ms;
-        pci.pDepthStencilState  = &ds;
-        pci.pColorBlendState    = &cb;
-        pci.pDynamicState       = &dsi;
-        pci.layout              = pipe_.layout;
-        VK_CHECK(vkCreateGraphicsPipelines(dev_, VK_NULL_HANDLE, 1, &pci, nullptr, &pipe_.pipeline));
+        auto make_pipe = [&](VkPrimitiveTopology topo, Pipe& out) {
+            VkPipelineInputAssemblyStateCreateInfo ia{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO};
+            ia.topology = topo;
+            VkGraphicsPipelineCreateInfo pci{VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO};
+            pci.pNext               = &rinfo;
+            pci.stageCount          = 2;
+            pci.pStages             = st;
+            pci.pVertexInputState   = &vi;
+            pci.pInputAssemblyState = &ia;
+            pci.pViewportState      = &vp;
+            pci.pRasterizationState = &rs;
+            if (topo == VK_PRIMITIVE_TOPOLOGY_LINE_LIST) pci.pRasterizationState = &rsLine;
+            pci.pMultisampleState   = &ms;
+            pci.pDepthStencilState  = &ds;
+            pci.pColorBlendState    = &cb;
+            pci.pDynamicState       = &dsi;
+            pci.layout              = pipe_tri_.layout;
+            VK_CHECK(vkCreateGraphicsPipelines(dev_, VK_NULL_HANDLE, 1, &pci, nullptr, &out.pipeline));
+        };
+        make_pipe(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, pipe_tri_);
+        make_pipe(VK_PRIMITIVE_TOPOLOGY_LINE_LIST,     pipe_line_);
+        make_pipe(VK_PRIMITIVE_TOPOLOGY_POINT_LIST,    pipe_point_);
         vkDestroyShaderModule(dev_, vs, nullptr);
         vkDestroyShaderModule(dev_, fs, nullptr);
     }
 
     void destroy_pipeline_() {
-        if (pipe_.pipeline) vkDestroyPipeline(dev_, pipe_.pipeline, nullptr);
-        if (pipe_.layout) vkDestroyPipelineLayout(dev_, pipe_.layout, nullptr);
-        pipe_ = {};
+        if (pipe_tri_.pipeline) vkDestroyPipeline(dev_, pipe_tri_.pipeline, nullptr);
+        if (pipe_line_.pipeline) vkDestroyPipeline(dev_, pipe_line_.pipeline, nullptr);
+        if (pipe_point_.pipeline) vkDestroyPipeline(dev_, pipe_point_.pipeline, nullptr);
+        if (pipe_tri_.layout) vkDestroyPipelineLayout(dev_, pipe_tri_.layout, nullptr);
+        pipe_tri_ = {};
+        pipe_line_ = {};
+        pipe_point_ = {};
     }
 
     static std::vector<char> load_spv_(const std::string& p) {
