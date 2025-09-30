@@ -52,10 +52,7 @@ jobs:
       - name: Configure (Ninja Multi-Config)
         shell: powershell
         run: |
-          cmake -S . -B build -G "Ninja Multi-Config" \
-            -DHINAPE_BUILD_TESTS=ON \
-            -DHINAPE_BUILD_EXAMPLES=ON \
-            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+          cmake -S . -B build -G "Ninja Multi-Config" -DHINAPE_BUILD_TESTS=ON -DHINAPE_BUILD_EXAMPLES=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 
       - name: Build (${{ matrix.build_type }})
         shell: powershell
@@ -71,4 +68,3 @@ jobs:
           $tbb = Get-ChildItem -Recurse -File -Path build -Filter "tbb12*.dll" | Select-Object -First 1
           if ($tbb) { $env:PATH = "$($tbb.DirectoryName);$env:PATH" }
           ctest --test-dir build -C ${{ matrix.build_type }} --output-on-failure
-
