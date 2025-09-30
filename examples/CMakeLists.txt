@@ -1,0 +1,56 @@
+cmake_minimum_required(VERSION 3.26)
+
+set(EXAMPLE_NAME xpbd_visualizer)
+
+# Shader sources (folder name 'shader' per requirement)
+set(SHADER_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/shader)
+set(SHADER_OUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/shaders_bin)
+file(MAKE_DIRECTORY ${SHADER_OUT_DIR})
+
+set(SHADERS
+    ${SHADER_SRC_DIR}/cloth.vert
+    ${SHADER_SRC_DIR}/cloth.frag
+)
+
+find_program(GLSLC glslc HINTS ENV VULKAN_SDK PATH_SUFFIXES Bin bin)
+set(SPIRV_OUTPUTS)
+if (GLSLC)
+    foreach(SRC ${SHADERS})
+        get_filename_component(FN ${SRC} NAME)
+        set(OUT ${SHADER_OUT_DIR}/${FN}.spv)
+        add_custom_command(
+            OUTPUT ${OUT}
+            COMMAND ${GLSLC} -O -c ${SRC} -o ${OUT}
+            DEPENDS ${SRC}
+            COMMENT "glslc compile ${FN} -> ${OUT}"
+            VERBATIM)
+        list(APPEND SPIRV_OUTPUTS ${OUT})
+    endforeach()
+    add_custom_target(${EXAMPLE_NAME}_shaders DEPENDS ${SPIRV_OUTPUTS})
+else()
+    message(WARNING "glslc not found; shaders will not be compiled. Place precompiled .spv files into ${SHADER_OUT_DIR}")
+endif()
+
+add_executable(${EXAMPLE_NAME} xpbd_visualizer.cpp)
+if (SPIRV_OUTPUTS)
+    add_dependencies(${EXAMPLE_NAME} ${EXAMPLE_NAME}_shaders)
+endif()
+
+if (SPIRV_OUTPUTS)
+    target_compile_definitions(${EXAMPLE_NAME} PRIVATE SHADER_OUTPUT_DIR="${SHADER_OUT_DIR}" SHADER_SOURCE_DIR="${SHADER_SRC_DIR}")
+else()
+    target_compile_definitions(${EXAMPLE_NAME} PRIVATE SHADER_OUTPUT_DIR="${SHADER_SRC_DIR}" SHADER_SOURCE_DIR="${SHADER_SRC_DIR}")
+endif()
+
+# Link engine library
+target_link_libraries(${EXAMPLE_NAME} PRIVATE HinaPE)
+
+# Try to use vulkan visualizer if available
+include(../cmake/setup_vulkan_visualizer.cmake OPTIONAL)
+if (COMMAND use_vulkan_visualizer)
+    use_vulkan_visualizer(${EXAMPLE_NAME})
+endif()
+
+set_target_properties(${EXAMPLE_NAME} PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
