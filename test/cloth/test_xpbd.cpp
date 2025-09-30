@@ -1,7 +1,7 @@
 #define CATCH_CONFIG_MAIN
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
-#include "cloth/xpbd.h"
+#include "cloth.h"
 #include <vector>
 #include <algorithm>
 #include <numeric>

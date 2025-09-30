@@ -1,9 +1,9 @@
-#ifndef HINAPE_XPBD_H
-#define HINAPE_XPBD_H
+#ifndef HINAPE_CLOTH_H
+#define HINAPE_CLOTH_H
+
 #include <cstddef>
 #include <cstdint>
 #include <span>
-#include <utility>
 
 namespace HinaPE {
 
@@ -12,7 +12,7 @@ namespace HinaPE {
     using usize = std::size_t;
 
     struct ExecPolicy {
-        enum class Backend { Native, Avx2 }; // AVX2 backend option
+        enum class Backend { Native, Avx2 };
         Backend backend{Backend::Native};
         int threads{0};
         bool deterministic{true};
@@ -30,7 +30,7 @@ namespace HinaPE {
         std::span<const f32> positions_xyz;
         std::span<const u32> triangles;
         std::span<const u32> fixed_indices;
-        ExecPolicy exec{};   // user can request Avx2
+        ExecPolicy exec{};
         SolvePolicy solve{};
     };
 
@@ -51,9 +51,15 @@ namespace HinaPE {
         usize count{};
     };
 
-    namespace detail { struct Sim; }
+    namespace detail {
+        struct ISim {
+            virtual ~ISim() = default;
+            virtual void step(const StepParams&) noexcept = 0;
+            virtual DynamicView map_dynamic() noexcept    = 0;
+        };
+    } // namespace detail
 
-    using Handle = detail::Sim*;
+    using Handle = detail::ISim*;
 
     [[nodiscard]] Handle create(const InitDesc& desc);
     void destroy(Handle h) noexcept;
@@ -61,4 +67,6 @@ namespace HinaPE {
     [[nodiscard]] DynamicView map_dynamic(Handle h) noexcept;
 
 } // namespace HinaPE
-#endif // HINAPE_XPBD_H
+
+#endif // HINAPE_CLOTH_H
+

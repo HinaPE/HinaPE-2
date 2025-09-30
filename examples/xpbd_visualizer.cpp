@@ -1,4 +1,4 @@
-#include "cloth/xpbd.h"
+#include "cloth.h"
 
 #ifdef HINAPE_HAVE_VULKAN_VISUALIZER
 #include <SDL3/SDL_events.h>
@@ -117,7 +117,7 @@ public:
     void destroy(const EngineContext& e, const RendererCaps&) override {
         destroy_gpu_();
         destroy_pipeline_();
-        if (handle_) ::HinaPE::destroy(handle_); // 修正：限定命名空间避免递归解析本成员函数
+        if (handle_) ::HinaPE::destroy(handle_); // 修正：限定命名空间避免递归解析本成员函�?
         handle_ = nullptr;
         dev_    = VK_NULL_HANDLE;
     }
@@ -307,7 +307,7 @@ private:
     std::vector<u32> fixed_;
     size_t tri_count_{0};
     GPUBuffer pos_{}; GPUBuffer idx_tri_{}; GPUBuffer idx_line_{}; size_t line_count_{0};
-    std::vector<uint32_t> line_indices_; // 新增：存储唯一边索引
+    std::vector<uint32_t> line_indices_; // 新增：存储唯一边索�?
     struct Pipe {
         VkPipeline pipeline{};
         VkPipelineLayout layout{};
@@ -359,7 +359,7 @@ private:
         destroy_buffer(ctx_, idx_tri_);
         destroy_buffer(ctx_, idx_line_);
     }
-    // 构建唯一边集合
+    // 构建唯一边集�?
     void build_lines_from_tris_() {
         line_indices_.clear();
         if (tri_count_ % 3 != 0) return;
