@@ -53,11 +53,10 @@ namespace HinaPE {
 
     namespace detail {
         struct ISim {
-            virtual ~ISim() = default;
+            virtual ~ISim()                               = default;
             virtual void step(const StepParams&) noexcept = 0;
             virtual DynamicView map_dynamic() noexcept    = 0;
         };
-
 
         ISim* make_native(const InitDesc& desc);
 #if defined(HINAPE_HAVE_SIMD)
@@ -66,11 +65,11 @@ namespace HinaPE {
 #if defined(HINAPE_HAVE_TBB)
         ISim* make_tbb(const InitDesc& desc);
 #endif
-        // Projective Dynamics native solver
+
         ISim* make_pd_native(const InitDesc& desc);
-        // Finite Element Method (membrane, cotangent Laplacian) native solver
+
         ISim* make_fem_native(const InitDesc& desc);
-    } 
+    }
 
     using Handle = detail::ISim*;
     [[nodiscard]] Handle create(const InitDesc& desc);
@@ -78,6 +77,6 @@ namespace HinaPE {
     void step(Handle h, const StepParams& params) noexcept;
     [[nodiscard]] DynamicView map_dynamic(Handle h) noexcept;
 
-} 
+}
 
-#endif 
+#endif

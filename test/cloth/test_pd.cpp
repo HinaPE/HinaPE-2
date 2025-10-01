@@ -1,12 +1,12 @@
 #define CATCH_CONFIG_MAIN
-#include <catch2/catch_test_macros.hpp>
-#include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include "cloth.h"
-
 #include <algorithm>
 #include <cmath>
 #include <numeric>
 #include <vector>
+
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_floating_point.hpp>
 
 using namespace HinaPE;
 using Catch::Matchers::WithinAbs;
@@ -19,7 +19,7 @@ namespace {
         fixed.clear();
         for (int y = 0; y < ny; ++y) {
             for (int x = 0; x < nx; ++x) {
-                const int id = y * nx + x;
+                const int id    = y * nx + x;
                 xyz[id * 3 + 0] = x * spacing;
                 xyz[id * 3 + 1] = 0.0f;
                 xyz[id * 3 + 2] = y * spacing;
@@ -32,17 +32,26 @@ namespace {
                 const int b = y * nx + x + 1;
                 const int c = (y + 1) * nx + x;
                 const int d = (y + 1) * nx + x + 1;
-                tris.push_back(static_cast<u32>(a)); tris.push_back(static_cast<u32>(b)); tris.push_back(static_cast<u32>(d));
-                tris.push_back(static_cast<u32>(a)); tris.push_back(static_cast<u32>(d)); tris.push_back(static_cast<u32>(c));
+                tris.push_back(static_cast<u32>(a));
+                tris.push_back(static_cast<u32>(b));
+                tris.push_back(static_cast<u32>(d));
+                tris.push_back(static_cast<u32>(a));
+                tris.push_back(static_cast<u32>(d));
+                tris.push_back(static_cast<u32>(c));
             }
         }
     }
 }
 
 TEST_CASE("pd_api_create_destroy_step_map") {
-    std::vector<float> xyz; std::vector<u32> tris; std::vector<u32> fixed;
+    std::vector<float> xyz;
+    std::vector<u32> tris;
+    std::vector<u32> fixed;
     make_grid(8, 8, 0.1f, xyz, tris, fixed);
-    ExecPolicy ex{}; ex.backend = ExecPolicy::Backend::Pd; SolvePolicy sv{}; Handle h = create(InitDesc{xyz, tris, fixed, ex, sv});
+    ExecPolicy ex{};
+    ex.backend = ExecPolicy::Backend::Pd;
+    SolvePolicy sv{};
+    Handle h = create(InitDesc{xyz, tris, fixed, ex, sv});
     REQUIRE(h != nullptr);
     DynamicView v = map_dynamic(h);
     REQUIRE(v.count == xyz.size() / 3);
@@ -51,10 +60,17 @@ TEST_CASE("pd_api_create_destroy_step_map") {
 }
 
 TEST_CASE("pd_fixed_vertices_remain_pinned") {
-    std::vector<float> xyz; std::vector<u32> tris; std::vector<u32> fixed;
-    const int nx = 16, ny = 16; make_grid(nx, ny, 0.05f, xyz, tris, fixed);
-    ExecPolicy ex{}; ex.backend = ExecPolicy::Backend::Pd; SolvePolicy sv{}; sv.iterations=20; auto h = create(InitDesc{xyz, tris, fixed, ex, sv});
-    auto v = map_dynamic(h);
+    std::vector<float> xyz;
+    std::vector<u32> tris;
+    std::vector<u32> fixed;
+    const int nx = 16, ny = 16;
+    make_grid(nx, ny, 0.05f, xyz, tris, fixed);
+    ExecPolicy ex{};
+    ex.backend = ExecPolicy::Backend::Pd;
+    SolvePolicy sv{};
+    sv.iterations = 20;
+    auto h        = create(InitDesc{xyz, tris, fixed, ex, sv});
+    auto v        = map_dynamic(h);
     for (int i = 0; i < 40; ++i) step(h, StepParams{});
     for (int x = 0; x < nx; ++x) {
         const size_t id = static_cast<size_t>(x);
@@ -66,10 +82,15 @@ TEST_CASE("pd_fixed_vertices_remain_pinned") {
 }
 
 TEST_CASE("pd_gravity_moves_com_down") {
-    std::vector<float> xyz; std::vector<u32> tris; std::vector<u32> fixed;
+    std::vector<float> xyz;
+    std::vector<u32> tris;
+    std::vector<u32> fixed;
     make_grid(8, 8, 0.1f, xyz, tris, fixed);
-    ExecPolicy ex{}; ex.backend = ExecPolicy::Backend::Pd; SolvePolicy sv{}; auto h = create(InitDesc{xyz, tris, fixed, ex, sv});
-    auto v = map_dynamic(h);
+    ExecPolicy ex{};
+    ex.backend = ExecPolicy::Backend::Pd;
+    SolvePolicy sv{};
+    auto h       = create(InitDesc{xyz, tris, fixed, ex, sv});
+    auto v       = map_dynamic(h);
     double sumy0 = std::accumulate(v.pos_y, v.pos_y + v.count, 0.0);
     for (int i = 0; i < 60; ++i) step(h, StepParams{});
     double sumy1 = std::accumulate(v.pos_y, v.pos_y + v.count, 0.0);
@@ -78,11 +99,18 @@ TEST_CASE("pd_gravity_moves_com_down") {
 }
 
 TEST_CASE("pd_zero_dt_is_safe") {
-    std::vector<float> xyz; std::vector<u32> tris; std::vector<u32> fixed; make_grid(6, 6, 0.1f, xyz, tris, fixed);
-    ExecPolicy ex{}; ex.backend = ExecPolicy::Backend::Pd; SolvePolicy sv{}; auto h = create(InitDesc{xyz, tris, fixed, ex, sv});
+    std::vector<float> xyz;
+    std::vector<u32> tris;
+    std::vector<u32> fixed;
+    make_grid(6, 6, 0.1f, xyz, tris, fixed);
+    ExecPolicy ex{};
+    ex.backend = ExecPolicy::Backend::Pd;
+    SolvePolicy sv{};
+    auto h = create(InitDesc{xyz, tris, fixed, ex, sv});
     auto v = map_dynamic(h);
-    StepParams sp{}; sp.dt = 0.0f; step(h, sp);
+    StepParams sp{};
+    sp.dt = 0.0f;
+    step(h, sp);
     CHECK(std::isfinite(v.pos_y[0]));
     destroy(h);
 }
-

@@ -3,27 +3,33 @@ cmake_minimum_required(VERSION 3.26)
 set(EXAMPLE_NAME xpbd_visualizer)
 set(SHADER_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/shader)
 set(SHADER_OUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/shaders_bin)
-file(MAKE_DIRECTORY ${SHADER_OUT_DIR})
+set(COMPILED_SHADER_DIR ${SHADER_SRC_DIR})
 set(SHADERS ${SHADER_SRC_DIR}/cloth.vert ${SHADER_SRC_DIR}/cloth.frag)
 find_program(GLSLC glslc HINTS ENV VULKAN_SDK PATH_SUFFIXES Bin bin)
-set(SPIRV_OUTPUTS)
 if (GLSLC)
+    file(MAKE_DIRECTORY ${SHADER_OUT_DIR})
+    set(COMPILED_SHADER_DIR ${SHADER_OUT_DIR})
+    set(SPIRV_OUTPUTS)
     foreach(SRC ${SHADERS})
         get_filename_component(FN ${SRC} NAME)
         set(OUT ${SHADER_OUT_DIR}/${FN}.spv)
-        add_custom_command(OUTPUT ${OUT} COMMAND ${GLSLC} -O -c ${SRC} -o ${OUT} DEPENDS ${SRC} VERBATIM)
+        add_custom_command(
+            OUTPUT ${OUT}
+            COMMAND ${GLSLC} -O -c ${SRC} -o ${OUT}
+            DEPENDS ${SRC}
+            VERBATIM)
         list(APPEND SPIRV_OUTPUTS ${OUT})
     endforeach()
     add_custom_target(${EXAMPLE_NAME}_shaders DEPENDS ${SPIRV_OUTPUTS})
 endif ()
 
 add_executable(${EXAMPLE_NAME} xpbd_visualizer.cpp)
-if (SPIRV_OUTPUTS)
+if (GLSLC)
     add_dependencies(${EXAMPLE_NAME} ${EXAMPLE_NAME}_shaders)
-    target_compile_definitions(${EXAMPLE_NAME} PRIVATE SHADER_OUTPUT_DIR="${SHADER_OUT_DIR}" SHADER_SOURCE_DIR="${SHADER_SRC_DIR}")
-else ()
-    target_compile_definitions(${EXAMPLE_NAME} PRIVATE SHADER_OUTPUT_DIR="${SHADER_SRC_DIR}" SHADER_SOURCE_DIR="${SHADER_SRC_DIR}")
 endif ()
+target_compile_definitions(${EXAMPLE_NAME} PRIVATE
+    SHADER_OUTPUT_DIR="${COMPILED_SHADER_DIR}"
+    SHADER_SOURCE_DIR="${SHADER_SRC_DIR}")
 
 target_link_libraries(${EXAMPLE_NAME} PRIVATE HinaPE)
 include(../cmake/setup_tbb.cmake OPTIONAL)
@@ -36,3 +42,4 @@ if (COMMAND use_vulkan_visualizer)
 endif ()
 
 set_target_properties(${EXAMPLE_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+

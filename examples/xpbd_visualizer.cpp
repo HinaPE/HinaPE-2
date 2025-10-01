@@ -7,7 +7,6 @@
 #include <cstring>
 #include <imgui.h>
 #include <stdexcept>
-#include <set>
 #include <vector>
 #include <vk_engine.h>
 #include <vk_mem_alloc.h>
@@ -34,7 +33,7 @@ static void build_grid(int nx, int ny, float spacing, std::vector<float>& xyz, s
     }
     if (nx > 0) {
         fixed.push_back(0u);
-        if (nx > 1) fixed.push_back((u32)(nx - 1));
+        if (nx > 1) fixed.push_back((u32) (nx - 1));
     }
     for (int y = 0; y < ny - 1; ++y) {
         for (int x = 0; x < nx - 1; ++x) {
@@ -120,7 +119,7 @@ public:
     void destroy(const EngineContext& e, const RendererCaps&) override {
         destroy_gpu_();
         destroy_pipeline_();
-        if (handle_) ::HinaPE::destroy(handle_); 
+        if (handle_) ::HinaPE::destroy(handle_);
         handle_ = nullptr;
         dev_    = VK_NULL_HANDLE;
     }
@@ -268,18 +267,23 @@ public:
             ImGui::SliderInt("Substeps", &params_.substeps, 1, 8);
             ImGui::SliderInt("Iterations", &params_.iterations, 1, 60);
             ImGui::SliderFloat("Damping", &params_.damping, 0.0f, 1.0f);
-            ImGui::SliderFloat3("Gravity", &params_.gravity.x, -30.f, 30.f);            ImGui::Separator();
-            static int backend_idx = 0; const char* backends[] = {"Native","SIMD","TBB","PD (native)","FEM (native)"};
+            ImGui::SliderFloat3("Gravity", &params_.gravity.x, -30.f, 30.f);
+            ImGui::Separator();
+            static int backend_idx = 0;
+            const char* backends[] = {"Native", "SIMD", "TBB", "PD (native)", "FEM (native)"};
             if (ImGui::Combo("Backend", &backend_idx, backends, IM_ARRAYSIZE(backends))) {
                 ExecPolicy ex{};
                 switch (backend_idx) {
-                    case 1: ex.backend = ExecPolicy::Backend::Simd; break;
-                    case 2: ex.backend = ExecPolicy::Backend::Tbb;  break;
-                    case 3: ex.backend = ExecPolicy::Backend::Pd;   break;
-                    case 4: ex.backend = ExecPolicy::Backend::Fem;  break;
-                    default: ex.backend = ExecPolicy::Backend::Native; break;
+                case 1: ex.backend = ExecPolicy::Backend::Simd; break;
+                case 2: ex.backend = ExecPolicy::Backend::Tbb; break;
+                case 3: ex.backend = ExecPolicy::Backend::Pd; break;
+                case 4: ex.backend = ExecPolicy::Backend::Fem; break;
+                default: ex.backend = ExecPolicy::Backend::Native; break;
                 }
-                SolvePolicy sv{}; sv.iterations = params_.iterations; sv.substeps = params_.substeps; sv.damping = params_.damping;
+                SolvePolicy sv{};
+                sv.iterations = params_.iterations;
+                sv.substeps   = params_.substeps;
+                sv.damping    = params_.damping;
                 if (handle_) ::HinaPE::destroy(handle_);
                 InitDesc init{std::span<const float>(xyz_.data(), xyz_.size()), std::span<const u32>(tris_.data(), tris_.size()), std::span<const u32>(fixed_.data(), fixed_.size()), ex, sv};
                 handle_ = create(init);
@@ -326,8 +330,11 @@ private:
     std::vector<u32> tris_;
     std::vector<u32> fixed_;
     size_t tri_count_{0};
-    GPUBuffer pos_{}; GPUBuffer idx_tri_{}; GPUBuffer idx_line_{}; size_t line_count_{0};
-    std::vector<uint32_t> line_indices_; 
+    GPUBuffer pos_{};
+    GPUBuffer idx_tri_{};
+    GPUBuffer idx_line_{};
+    size_t line_count_{0};
+    std::vector<uint32_t> line_indices_;
     struct Pipe {
         VkPipeline pipeline{};
         VkPipelineLayout layout{};
@@ -338,16 +345,17 @@ private:
         build_grid(nx, ny, 0.04f, xyz_, tris_, fixed_);
         ExecPolicy exec{};
         SolvePolicy solve{};
-        solve.substeps   = params_.substeps;
-        solve.iterations = params_.iterations;
-        solve.damping = params_.damping; solve.compliance_stretch = params_.compliance;
+        solve.substeps           = params_.substeps;
+        solve.iterations         = params_.iterations;
+        solve.damping            = params_.damping;
+        solve.compliance_stretch = params_.compliance;
         InitDesc init{std::span<const float>(xyz_.data(), xyz_.size()), std::span<const u32>(tris_.data(), tris_.size()), std::span<const u32>(fixed_.data(), fixed_.size()), exec, solve};
         handle_    = create(init);
         tri_count_ = tris_.size();
         build_lines_from_tris_();
     }
     void reset_scene_() {
-        if (handle_) ::HinaPE::destroy(handle_); 
+        if (handle_) ::HinaPE::destroy(handle_);
         build_scene_();
         upload_indices_();
         upload_lines_();
@@ -365,13 +373,13 @@ private:
         std::memcpy(idx_tri_.mapped, tris_.data(), tri_count_ * sizeof(uint32_t));
     }
     void upload_lines_() {
-        if(line_indices_.empty()) return;
-        size_t needBytes = line_indices_.size()*sizeof(uint32_t);
-        if(needBytes > idx_line_.size){
+        if (line_indices_.empty()) return;
+        size_t needBytes = line_indices_.size() * sizeof(uint32_t);
+        if (needBytes > idx_line_.size) {
             destroy_buffer(ctx_, idx_line_);
             create_buffer(ctx_, needBytes, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, true, idx_line_);
         }
-        if(!idx_line_.mapped) return;
+        if (!idx_line_.mapped) return;
         std::memcpy(idx_line_.mapped, line_indices_.data(), needBytes);
     }
     void destroy_gpu_() {
@@ -386,9 +394,9 @@ private:
         std::vector<std::pair<uint32_t, uint32_t>> edges;
         edges.reserve(tri_count_);
         for (size_t t = 0; t < tri_count_; t += 3) {
-            uint32_t a = tris_[t];
-            uint32_t b = tris_[t + 1];
-            uint32_t c = tris_[t + 2];
+            uint32_t a    = tris_[t];
+            uint32_t b    = tris_[t + 1];
+            uint32_t c    = tris_[t + 2];
             auto add_edge = [&](uint32_t i, uint32_t j) {
                 if (i > j) std::swap(i, j);
                 edges.emplace_back(i, j);
@@ -400,7 +408,7 @@ private:
         std::sort(edges.begin(), edges.end());
         edges.erase(std::unique(edges.begin(), edges.end()), edges.end());
         line_indices_.reserve(edges.size() * 2);
-        for (auto &e : edges) {
+        for (auto& e : edges) {
             line_indices_.push_back(e.first);
             line_indices_.push_back(e.second);
         }
@@ -458,12 +466,12 @@ private:
         vp.viewportCount = 1;
         vp.scissorCount  = 1;
         VkPipelineRasterizationStateCreateInfo rs{VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO};
-        rs.polygonMode = VK_POLYGON_MODE_FILL;
-        rs.cullMode    = VK_CULL_MODE_NONE;
-        rs.frontFace   = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-        rs.lineWidth   = 1.0f;
+        rs.polygonMode                                = VK_POLYGON_MODE_FILL;
+        rs.cullMode                                   = VK_CULL_MODE_NONE;
+        rs.frontFace                                  = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+        rs.lineWidth                                  = 1.0f;
         VkPipelineRasterizationStateCreateInfo rsLine = rs;
-        rsLine.polygonMode = VK_POLYGON_MODE_FILL;
+        rsLine.polygonMode                            = VK_POLYGON_MODE_FILL;
         VkPipelineMultisampleStateCreateInfo ms{VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO};
         ms.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
         VkPipelineDepthStencilStateCreateInfo ds{VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO};
@@ -484,7 +492,7 @@ private:
         lci.pushConstantRangeCount = 1;
         lci.pPushConstantRanges    = &pcr;
         VK_CHECK(vkCreatePipelineLayout(dev_, &lci, nullptr, &pipe_tri_.layout));
-        pipe_line_.layout = pipe_tri_.layout;
+        pipe_line_.layout  = pipe_tri_.layout;
         pipe_point_.layout = pipe_tri_.layout;
         VkPipelineRenderingCreateInfo rinfo{VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO};
         VkFormat colorFmt             = VK_FORMAT_B8G8R8A8_UNORM;
@@ -492,7 +500,7 @@ private:
         rinfo.colorAttachmentCount    = 1;
         rinfo.pColorAttachmentFormats = &colorFmt;
         rinfo.depthAttachmentFormat   = depthFmt;
-        auto make_pipe = [&](VkPrimitiveTopology topo, Pipe& out) {
+        auto make_pipe                = [&](VkPrimitiveTopology topo, Pipe& out) {
             VkPipelineInputAssemblyStateCreateInfo ia{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO};
             ia.topology = topo;
             VkGraphicsPipelineCreateInfo pci{VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO};
@@ -504,16 +512,16 @@ private:
             pci.pViewportState      = &vp;
             pci.pRasterizationState = &rs;
             if (topo == VK_PRIMITIVE_TOPOLOGY_LINE_LIST) pci.pRasterizationState = &rsLine;
-            pci.pMultisampleState   = &ms;
-            pci.pDepthStencilState  = &ds;
-            pci.pColorBlendState    = &cb;
-            pci.pDynamicState       = &dsi;
-            pci.layout              = pipe_tri_.layout;
+            pci.pMultisampleState  = &ms;
+            pci.pDepthStencilState = &ds;
+            pci.pColorBlendState   = &cb;
+            pci.pDynamicState      = &dsi;
+            pci.layout             = pipe_tri_.layout;
             VK_CHECK(vkCreateGraphicsPipelines(dev_, VK_NULL_HANDLE, 1, &pci, nullptr, &out.pipeline));
         };
         make_pipe(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, pipe_tri_);
-        make_pipe(VK_PRIMITIVE_TOPOLOGY_LINE_LIST,     pipe_line_);
-        make_pipe(VK_PRIMITIVE_TOPOLOGY_POINT_LIST,    pipe_point_);
+        make_pipe(VK_PRIMITIVE_TOPOLOGY_LINE_LIST, pipe_line_);
+        make_pipe(VK_PRIMITIVE_TOPOLOGY_POINT_LIST, pipe_point_);
         vkDestroyShaderModule(dev_, vs, nullptr);
         vkDestroyShaderModule(dev_, fs, nullptr);
     }
@@ -523,8 +531,8 @@ private:
         if (pipe_line_.pipeline) vkDestroyPipeline(dev_, pipe_line_.pipeline, nullptr);
         if (pipe_point_.pipeline) vkDestroyPipeline(dev_, pipe_point_.pipeline, nullptr);
         if (pipe_tri_.layout) vkDestroyPipelineLayout(dev_, pipe_tri_.layout, nullptr);
-        pipe_tri_ = {};
-        pipe_line_ = {};
+        pipe_tri_   = {};
+        pipe_line_  = {};
         pipe_point_ = {};
     }
 
@@ -569,7 +577,3 @@ int main() {
     return 0;
 }
 #endif
-
-
-
-

@@ -12,34 +12,25 @@ FetchContent_Declare(Catch2
     GIT_SHALLOW TRUE)
 FetchContent_MakeAvailable(Catch2)
 
-add_executable(test_xpbd cloth/test_xpbd.cpp)
-target_link_libraries(test_xpbd PRIVATE HinaPE Catch2::Catch2WithMain)
 include(../cmake/setup_tbb.cmake OPTIONAL)
-if (COMMAND use_tbb)
-    use_tbb(test_xpbd)
-endif ()
+
+function(hinape_add_cloth_test target source)
+    add_executable(${target} ${source})
+    target_link_libraries(${target} PRIVATE HinaPE Catch2::Catch2WithMain)
+    if (COMMAND use_tbb)
+        use_tbb(${target})
+    endif ()
+endfunction()
+
+hinape_add_cloth_test(test_xpbd cloth/test_xpbd.cpp)
 add_test(NAME xpbd COMMAND test_xpbd)
 
-# Benchmarks: backend performance comparison for XPBD cloth
-add_executable(bench_xpbd cloth/bench_xpbd.cpp)
-target_link_libraries(bench_xpbd PRIVATE HinaPE Catch2::Catch2WithMain)
-if (COMMAND use_tbb)
-    use_tbb(bench_xpbd)
-endif ()
+hinape_add_cloth_test(bench_xpbd cloth/bench_xpbd.cpp)
 add_test(NAME xpbd_bench COMMAND bench_xpbd --reporter console --benchmark-samples 30 --benchmark-warmup-time 0.2)
 
-# PD tests
-add_executable(test_pd cloth/test_pd.cpp)
-target_link_libraries(test_pd PRIVATE HinaPE Catch2::Catch2WithMain)
-if (COMMAND use_tbb)
-    use_tbb(test_pd)
-endif ()
+hinape_add_cloth_test(test_pd cloth/test_pd.cpp)
 add_test(NAME pd COMMAND test_pd)
 
-# FEM tests
-add_executable(test_fem cloth/test_fem.cpp)
-target_link_libraries(test_fem PRIVATE HinaPE Catch2::Catch2WithMain)
-if (COMMAND use_tbb)
-    use_tbb(test_fem)
-endif ()
+hinape_add_cloth_test(test_fem cloth/test_fem.cpp)
 add_test(NAME fem COMMAND test_fem)
+

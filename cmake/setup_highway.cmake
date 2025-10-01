@@ -1,14 +1,12 @@
 include_guard(GLOBAL)
 
-# Default to the latest branch of google/highway. Override by setting _HPE_HWY_TAG before include.
 if (NOT DEFINED _HPE_HWY_TAG)
     set(_HPE_HWY_TAG "1.3.0")
 endif ()
 
-# Try an existing installation first.
 if (NOT TARGET hwy::hwy AND NOT TARGET Highway::hwy)
     find_package(highway CONFIG QUIET)
-    # Normalize any discovered targets
+
     set(_HWY_BASE "")
     if (TARGET hwy)
         set(_HWY_BASE hwy)
@@ -30,10 +28,9 @@ if (NOT TARGET hwy::hwy AND NOT TARGET Highway::hwy)
     endif ()
 endif ()
 
-# If still not available, fetch the latest from upstream.
 if (NOT TARGET Highway::hwy)
     include(FetchContent)
-    # Disable optional extras when possible to keep builds lean.
+
     set(HWY_ENABLE_TESTS OFF CACHE BOOL "" FORCE)
     set(HWY_ENABLE_EXAMPLES OFF CACHE BOOL "" FORCE)
     FetchContent_Declare(highway
@@ -43,7 +40,6 @@ if (NOT TARGET Highway::hwy)
         FIND_PACKAGE_ARGS)
     FetchContent_MakeAvailable(highway)
 
-    # Normalize target naming to Highway::hwy and/or hwy::hwy without aliasing an alias
     set(_HWY_BASE "")
     if (TARGET hwy)
         set(_HWY_BASE hwy)
@@ -72,7 +68,7 @@ function(use_highway target)
 
     if (TARGET Highway::hwy)
         target_link_libraries(${target} PUBLIC Highway::hwy)
-        # Normalize feature define to project-wide SIMD availability flag
+
         target_compile_definitions(${target} PUBLIC HINAPE_HAVE_SIMD=1)
     else ()
         message(STATUS "Highway not available; proceeding without it for `${target}`")
