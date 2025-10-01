@@ -1,5 +1,5 @@
 include_guard(GLOBAL)
-set(_HPE_TBB_VERSION "2022.2.0")
+set(_TBB_VERSION "2022.2.0")
 
 if (NOT TARGET TBB::tbb)
     find_package(TBB CONFIG QUIET)
@@ -7,12 +7,16 @@ endif ()
 
 if (NOT TARGET TBB::tbb)
     include(FetchContent)
+    set(BUILD_SHARED_LIBS ON CACHE BOOL "" FORCE)
     set(TBB_TEST OFF CACHE BOOL "" FORCE)
     set(TBB_STRICT OFF CACHE BOOL "" FORCE)
+    set(_OLD_LOG_LEVEL "${CMAKE_MESSAGE_LOG_LEVEL}")
+    set(CMAKE_MESSAGE_LOG_LEVEL "ERROR")
     FetchContent_Declare(oneTBB
-        URL https://github.com/uxlfoundation/oneTBB/archive/refs/tags/v${_HPE_TBB_VERSION}.tar.gz
-        DOWNLOAD_EXTRACT_TIMESTAMP OFF)
+            URL https://github.com/uxlfoundation/oneTBB/archive/refs/tags/v${_TBB_VERSION}.tar.gz
+            DOWNLOAD_EXTRACT_TIMESTAMP OFF)
     FetchContent_MakeAvailable(oneTBB)
+    set(CMAKE_MESSAGE_LOG_LEVEL "${_OLD_LOG_LEVEL}")
     if (NOT TARGET TBB::tbb AND TARGET tbb)
         add_library(TBB::tbb ALIAS tbb)
     endif ()
