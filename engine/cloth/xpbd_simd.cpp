@@ -295,7 +295,6 @@ static void HwySolveStretchXPBD(const uint32_t* HWY_RESTRICT batch,
 namespace HinaPE {
 namespace detail {
 using std::size_t;
-constexpr f32 k_epsilon = 1e-8f;
 
 struct SimdStatic {
     usize n_verts{0};
@@ -470,4 +469,3 @@ ISim* make_simd(const InitDesc& desc) {
 
 } // namespace detail
 } // namespace HinaPE
-
