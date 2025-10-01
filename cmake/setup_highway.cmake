@@ -2,7 +2,7 @@ include_guard(GLOBAL)
 
 # Default to the latest branch of google/highway. Override by setting _HPE_HWY_TAG before include.
 if (NOT DEFINED _HPE_HWY_TAG)
-    set(_HPE_HWY_TAG "master")
+    set(_HPE_HWY_TAG "1.3.0")
 endif ()
 
 # Try an existing installation first.
