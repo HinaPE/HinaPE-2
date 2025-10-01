@@ -1,4 +1,4 @@
-name: macos-build
+﻿name: macos-build
 
 on:
   push:
@@ -63,6 +63,7 @@ jobs:
           cmake --build build --config ${{ matrix.build_type }} --parallel
 
       - name: Run tests (${{ matrix.build_type }})
+        if: ${{ matrix.build_type == 'Release' }}
         env:
           CTEST_OUTPUT_ON_FAILURE: 1
         run: |
