@@ -26,3 +26,11 @@ if (COMMAND use_tbb)
     use_tbb(bench_xpbd)
 endif ()
 add_test(NAME xpbd_bench COMMAND bench_xpbd --reporter console --benchmark-samples 30 --benchmark-warmup-time 0.2)
+
+# PD tests
+add_executable(test_pd cloth/test_pd.cpp)
+target_link_libraries(test_pd PRIVATE HinaPE Catch2::Catch2WithMain)
+if (COMMAND use_tbb)
+    use_tbb(test_pd)
+endif ()
+add_test(NAME pd COMMAND test_pd)

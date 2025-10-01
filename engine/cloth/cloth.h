@@ -12,7 +12,7 @@ namespace HinaPE {
     using usize = std::size_t;
 
     struct ExecPolicy {
-        enum class Backend { Native, Simd, Tbb };
+        enum class Backend { Native, Simd, Tbb, Pd };
         Backend backend{Backend::Native};
         int threads{0};
         bool deterministic{true};
@@ -66,6 +66,8 @@ namespace HinaPE {
 #if defined(HINAPE_HAVE_TBB)
         ISim* make_tbb(const InitDesc& desc);
 #endif
+        // Projective Dynamics native solver
+        ISim* make_pd_native(const InitDesc& desc);
     } 
 
     using Handle = detail::ISim*;

@@ -2,6 +2,9 @@
 namespace HinaPE {
 Handle create(const InitDesc& desc) {
     using Backend = ExecPolicy::Backend;
+    if (desc.exec.backend == Backend::Pd) {
+        return detail::make_pd_native(desc);
+    }
     if (desc.exec.backend == Backend::Simd) {
 #if defined(HINAPE_HAVE_SIMD)
         return detail::make_simd(desc);
