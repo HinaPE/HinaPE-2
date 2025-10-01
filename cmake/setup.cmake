@@ -25,6 +25,24 @@ if (HINAPE_SUPPRESS_MISLEADING_INDENTATION AND NOT MSVC)
     endif ()
 endif ()
 
+# Suppress GNU extension warning from highway library on Clang
+option(HINAPE_SUPPRESS_GNU_VA_ARGS "Suppress -Wgnu-zero-variadic-macro-arguments warning" ON)
+if (HINAPE_SUPPRESS_GNU_VA_ARGS AND NOT MSVC)
+    check_cxx_compiler_flag("-Wno-gnu-zero-variadic-macro-arguments" HINA_HAVE_NO_GNU_VA_ARGS)
+    if (HINA_HAVE_NO_GNU_VA_ARGS)
+        list(APPEND HINAPE_WARNINGS -Wno-gnu-zero-variadic-macro-arguments)
+    endif ()
+endif ()
+
+# Suppress pedantic warnings for __int128 from highway library
+option(HINAPE_SUPPRESS_PEDANTIC "Suppress -Wpedantic errors for dependencies" ON)
+if (HINAPE_SUPPRESS_PEDANTIC AND NOT MSVC)
+    check_cxx_compiler_flag("-Wno-error=pedantic" HINA_HAVE_NO_ERROR_PEDANTIC)
+    if (HINA_HAVE_NO_ERROR_PEDANTIC)
+        list(APPEND HINAPE_WARNINGS -Wno-error=pedantic)
+    endif ()
+endif ()
+
 set(HINAPE_PUBLIC_DEFINES "")
 message(STATUS "HinaPE setup: warnings='${HINAPE_WARNINGS}'")
 message(STATUS "HinaPE setup: release_opts='${HINAPE_RELEASE_OPTS}'")
