@@ -34,3 +34,11 @@ if (COMMAND use_tbb)
     use_tbb(test_pd)
 endif ()
 add_test(NAME pd COMMAND test_pd)
+
+# FEM tests
+add_executable(test_fem cloth/test_fem.cpp)
+target_link_libraries(test_fem PRIVATE HinaPE Catch2::Catch2WithMain)
+if (COMMAND use_tbb)
+    use_tbb(test_fem)
+endif ()
+add_test(NAME fem COMMAND test_fem)

@@ -5,6 +5,9 @@ Handle create(const InitDesc& desc) {
     if (desc.exec.backend == Backend::Pd) {
         return detail::make_pd_native(desc);
     }
+    if (desc.exec.backend == Backend::Fem) {
+        return detail::make_fem_native(desc);
+    }
     if (desc.exec.backend == Backend::Simd) {
 #if defined(HINAPE_HAVE_SIMD)
         return detail::make_simd(desc);

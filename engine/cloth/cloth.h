@@ -12,7 +12,7 @@ namespace HinaPE {
     using usize = std::size_t;
 
     struct ExecPolicy {
-        enum class Backend { Native, Simd, Tbb, Pd };
+        enum class Backend { Native, Simd, Tbb, Pd, Fem };
         Backend backend{Backend::Native};
         int threads{0};
         bool deterministic{true};
@@ -68,6 +68,8 @@ namespace HinaPE {
 #endif
         // Projective Dynamics native solver
         ISim* make_pd_native(const InitDesc& desc);
+        // Finite Element Method (membrane, cotangent Laplacian) native solver
+        ISim* make_fem_native(const InitDesc& desc);
     } 
 
     using Handle = detail::ISim*;

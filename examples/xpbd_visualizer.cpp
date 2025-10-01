@@ -269,13 +269,14 @@ public:
             ImGui::SliderInt("Iterations", &params_.iterations, 1, 60);
             ImGui::SliderFloat("Damping", &params_.damping, 0.0f, 1.0f);
             ImGui::SliderFloat3("Gravity", &params_.gravity.x, -30.f, 30.f);            ImGui::Separator();
-            static int backend_idx = 0; const char* backends[] = {"Native","SIMD","TBB","PD (native)"};
+            static int backend_idx = 0; const char* backends[] = {"Native","SIMD","TBB","PD (native)","FEM (native)"};
             if (ImGui::Combo("Backend", &backend_idx, backends, IM_ARRAYSIZE(backends))) {
                 ExecPolicy ex{};
                 switch (backend_idx) {
                     case 1: ex.backend = ExecPolicy::Backend::Simd; break;
                     case 2: ex.backend = ExecPolicy::Backend::Tbb;  break;
                     case 3: ex.backend = ExecPolicy::Backend::Pd;   break;
+                    case 4: ex.backend = ExecPolicy::Backend::Fem;  break;
                     default: ex.backend = ExecPolicy::Backend::Native; break;
                 }
                 SolvePolicy sv{}; sv.iterations = params_.iterations; sv.substeps = params_.substeps; sv.damping = params_.damping;
